@@ -1,0 +1,18 @@
+# 依存パッケージ（npm install で復元）
+node_modules/
+
+# ビルド成果物
+dist/
+public/
+
+# Cloudflare Wrangler のローカルデータ
+.wrangler/
+.dev.vars
+
+# Claude Code の個人設定
+.claude/settings.local.json
+
+# OS・エディタ
+.DS_Store
+Thumbs.db
+*.log

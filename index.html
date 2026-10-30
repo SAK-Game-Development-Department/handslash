@@ -1,0 +1,2985 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>ハンドスラッシュ</title>
+        <link
+            rel="stylesheet"
+            href="./node_modules/@fontsource/dela-gothic-one/index.css"
+        />
+        <style>
+            :root {
+                --accent: #ffd43b;
+                --bg: #070a18;
+                --text: #fff;
+                --p1: #4dabf7;
+                --p2: #ff6b6b;
+                --neon: #00e5ff;
+                --neon2: #ff2bd6;
+                --panel: rgba(14, 18, 44, 0.58);
+                --line: rgba(255, 255, 255, 0.14);
+                --display:
+                    "Dela Gothic One", "Yu Gothic UI", "Meiryo", sans-serif;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                height: 100%;
+                background: var(--bg);
+                color: var(--text);
+                overflow: hidden;
+                user-select: none;
+                font-family:
+                    "Yu Gothic UI", "Hiragino Sans", "Meiryo", system-ui,
+                    sans-serif;
+                font-weight: 700;
+            }
+            canvas {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                height: 100vh;
+                display: block;
+            }
+            video {
+                display: none;
+            }
+            .hidden {
+                display: none !important;
+            }
+
+            /* ---------- 画面（オーバーレイ） ---------- */
+            .overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 10;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 22px;
+                text-align: center;
+                padding: 16px;
+                animation: fadeIn 0.35s ease-out;
+                background: radial-gradient(
+                    ellipse at 50% 35%,
+                    rgba(60, 30, 120, 0.45),
+                    rgba(4, 6, 18, 0.82) 70%
+                );
+            }
+            .overlay::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                background: repeating-linear-gradient(
+                    115deg,
+                    transparent 0 140px,
+                    rgba(255, 255, 255, 0.025) 140px 142px
+                );
+            }
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+            @keyframes popIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(16px) scale(0.97);
+                }
+                to {
+                    opacity: 1;
+                    transform: none;
+                }
+            }
+
+            .panel {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 14px;
+                padding: 26px 30px;
+                width: min(620px, 100%);
+                border-radius: 22px;
+                background: var(--panel);
+                border: 1px solid var(--line);
+                backdrop-filter: blur(12px);
+                animation: popIn 0.4s ease-out;
+                box-shadow:
+                    0 0 0 1px rgba(0, 229, 255, 0.12),
+                    0 24px 70px rgba(0, 0, 0, 0.55),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            }
+            .panel::before {
+                content: "";
+                position: absolute;
+                left: 24px;
+                right: 24px;
+                top: -1px;
+                height: 2px;
+                border-radius: 2px;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    var(--neon),
+                    var(--neon2),
+                    transparent
+                );
+            }
+
+            h2 {
+                font-family: var(--display);
+                font-weight: 400;
+                font-size: clamp(30px, 4.6vw, 52px);
+                margin: 0;
+                letter-spacing: 0.04em;
+                text-shadow:
+                    0 0 18px rgba(0, 229, 255, 0.55),
+                    0 4px 0 rgba(0, 0, 0, 0.4);
+            }
+            .overlay p {
+                margin: 0;
+                font-size: 17px;
+                line-height: 1.75;
+                color: #dfe6ff;
+            }
+            .overlay p b {
+                color: var(--neon);
+            }
+            .kicker {
+                font-size: 13px;
+                letter-spacing: 0.45em;
+                color: var(--neon);
+                text-shadow: 0 0 10px var(--neon);
+            }
+
+            /* ---------- ロゴ ---------- */
+            .logo {
+                position: relative;
+                padding: 6px 20px;
+                animation: popIn 0.5s ease-out;
+            }
+            .logo-jp {
+                font-family: var(--display);
+                font-weight: 400;
+                font-size: clamp(50px, 9vw, 116px);
+                line-height: 1.05;
+                transform: skewX(-8deg);
+                background: linear-gradient(
+                    180deg,
+                    #fff 10%,
+                    #ffe066 48%,
+                    #ff7a45 72%,
+                    #ff2b6a 100%
+                );
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                filter: drop-shadow(0 0 22px rgba(255, 110, 70, 0.55))
+                    drop-shadow(0 6px 0 #4a0d2a);
+            }
+            .logo-en {
+                margin-top: 6px;
+                font-size: clamp(13px, 1.6vw, 18px);
+                letter-spacing: 0.9em;
+                padding-left: 0.9em;
+                color: var(--neon);
+                text-shadow: 0 0 12px var(--neon);
+            }
+            .logo .slash {
+                position: absolute;
+                left: -6%;
+                top: 46%;
+                width: 112%;
+                height: 5px;
+                border-radius: 5px;
+                transform-origin: left center;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    #fff 30%,
+                    var(--neon) 70%,
+                    transparent
+                );
+                box-shadow: 0 0 22px var(--neon);
+                animation: slash 3.6s cubic-bezier(0.7, 0, 0.2, 1) infinite;
+            }
+            @keyframes slash {
+                0%,
+                62% {
+                    transform: rotate(-11deg) scaleX(0);
+                    opacity: 0;
+                }
+                66% {
+                    opacity: 1;
+                }
+                76% {
+                    transform: rotate(-11deg) scaleX(1);
+                    opacity: 1;
+                }
+                100% {
+                    transform: rotate(-11deg) scaleX(1);
+                    opacity: 0;
+                }
+            }
+
+            /* ---------- ボタン ---------- */
+            .menu {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+            }
+            .row {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            button {
+                position: relative;
+                overflow: hidden;
+                font: inherit;
+                font-size: 22px;
+                font-weight: 800;
+                min-height: 64px;
+                padding: 12px 30px;
+                border: 0;
+                cursor: pointer;
+                color: #2a1200;
+                transition:
+                    transform 0.12s,
+                    filter 0.12s;
+                clip-path: polygon(
+                    14px 0,
+                    100% 0,
+                    calc(100% - 14px) 100%,
+                    0 100%
+                );
+                background: linear-gradient(100deg, #ffe066, #ff9f43);
+                filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
+            }
+            button:hover {
+                transform: translateY(-2px);
+                filter: drop-shadow(0 8px 18px rgba(255, 180, 60, 0.45))
+                    brightness(1.06);
+            }
+            button:active {
+                transform: translateY(1px) scale(0.99);
+            }
+            /* 光が流れる */
+            button::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: -40%;
+                width: 30%;
+                pointer-events: none;
+                background: linear-gradient(
+                    100deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.55),
+                    transparent
+                );
+                transform: skewX(-20deg);
+                animation: shine 4.5s ease-in-out infinite;
+            }
+            @keyframes shine {
+                0%,
+                70% {
+                    left: -40%;
+                }
+                100% {
+                    left: 130%;
+                }
+            }
+            /* 指を1秒かざすと貯まるゲージ */
+            button::after {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: calc(var(--p, 0) * 100%);
+                pointer-events: none;
+                background: linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0.25),
+                    rgba(255, 255, 255, 0.7)
+                );
+                box-shadow: 0 0 20px #fff;
+            }
+
+            button.mode {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                text-align: left;
+                min-height: 82px;
+                padding: 12px 34px;
+            }
+            button.mode .ico {
+                font-size: 38px;
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            }
+            button.mode b {
+                display: block;
+                font-family: var(--display);
+                font-weight: 400;
+                font-size: 26px;
+                letter-spacing: 0.03em;
+            }
+            button.mode small {
+                display: block;
+                font-size: 14px;
+                opacity: 0.78;
+                margin-top: 2px;
+            }
+            button.mode .tag {
+                margin-left: auto;
+                font-size: 12px;
+                letter-spacing: 0.2em;
+                padding: 4px 10px;
+                border-radius: 99px;
+                background: rgba(0, 0, 0, 0.18);
+            }
+            button.time {
+                background: linear-gradient(100deg, #8ce99a, #20c997);
+                color: #052b1c;
+            }
+            button.vs {
+                background: linear-gradient(
+                    100deg,
+                    #4dabf7,
+                    #845ef7 55%,
+                    #ff6b9d
+                );
+                color: #fff;
+                text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+            }
+            button.sub {
+                font-size: 16px;
+                min-height: 50px;
+                padding: 8px 22px;
+                color: #e8f6ff;
+                clip-path: none;
+                border-radius: 12px;
+                background: rgba(255, 255, 255, 0.07);
+                box-shadow: inset 0 0 0 1px rgba(0, 229, 255, 0.35);
+                filter: none;
+            }
+            button.sub:hover {
+                background: rgba(0, 229, 255, 0.16);
+                box-shadow:
+                    inset 0 0 0 1px var(--neon),
+                    0 0 18px rgba(0, 229, 255, 0.35);
+                filter: none;
+            }
+            button.sub::before {
+                display: none;
+            }
+
+            #pauseBtn {
+                position: fixed;
+                top: 14px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 5;
+                width: 60px;
+                min-height: 60px;
+                padding: 0;
+                font-size: 22px;
+                clip-path: none;
+                border-radius: 50%;
+                color: #fff;
+                background: rgba(10, 14, 36, 0.55);
+                box-shadow:
+                    inset 0 0 0 2px rgba(0, 229, 255, 0.6),
+                    0 0 18px rgba(0, 229, 255, 0.35);
+                backdrop-filter: blur(6px);
+                filter: none;
+            }
+            #pauseBtn:hover {
+                transform: translateX(-50%) scale(1.06);
+            }
+            #pauseBtn::before {
+                display: none;
+            }
+            #calibCancel {
+                position: fixed;
+                bottom: 90px;
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 5;
+            }
+
+            /* ---------- 中身 ---------- */
+            .scores {
+                display: flex;
+                gap: 46px;
+                justify-content: center;
+                align-items: flex-end;
+            }
+            .scores .s {
+                font-family: var(--display);
+                font-weight: 400;
+                font-size: 84px;
+                line-height: 1;
+                text-shadow: 0 0 26px currentColor;
+            }
+            .scores .n {
+                font-size: 16px;
+                letter-spacing: 0.3em;
+                opacity: 0.9;
+                margin-bottom: 6px;
+            }
+            .scores .vsmark {
+                font-family: var(--display);
+                font-size: 28px;
+                color: #fff8;
+                margin-bottom: 20px;
+            }
+            .crown {
+                font-size: 34px;
+                display: block;
+                animation: popIn 0.6s ease-out;
+            }
+            .stats-line {
+                font-size: 15px;
+                color: #b8c4ff;
+                letter-spacing: 0.05em;
+            }
+            .err {
+                color: #ff8787 !important;
+                max-width: 640px;
+            }
+            .howto {
+                text-align: left;
+                font-size: 16px;
+                line-height: 1.85;
+                display: grid;
+                gap: 6px;
+                width: 100%;
+            }
+            .howto div {
+                padding: 8px 14px;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.05);
+                border-left: 3px solid var(--neon);
+            }
+            .howto b {
+                color: var(--accent);
+            }
+            .spinner {
+                width: 54px;
+                height: 54px;
+                border-radius: 50%;
+                border: 4px solid rgba(255, 255, 255, 0.12);
+                border-top-color: var(--neon);
+                box-shadow: 0 0 20px rgba(0, 229, 255, 0.35);
+                animation: spin 0.9s linear infinite;
+            }
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            /* 低い画面ではつめて表示 */
+            @media (max-height: 860px) {
+                .overlay {
+                    gap: 12px;
+                }
+                .logo-jp {
+                    font-size: clamp(40px, min(9vw, 11vh), 116px);
+                }
+                .logo-en {
+                    margin-top: 2px;
+                }
+                .panel {
+                    padding: 18px 24px;
+                    gap: 10px;
+                }
+                button.mode {
+                    min-height: 66px;
+                    padding: 8px 30px;
+                }
+                button.mode .ico {
+                    font-size: 30px;
+                }
+                button.mode b {
+                    font-size: 22px;
+                }
+                button.sub {
+                    min-height: 44px;
+                }
+                .overlay p {
+                    font-size: 15px;
+                }
+                .howto {
+                    font-size: 14px;
+                    line-height: 1.6;
+                    gap: 4px;
+                }
+                .howto div {
+                    padding: 5px 12px;
+                }
+            }
+
+            /* ---------- 指カーソル（輪のゲージ＝ボタンを押すまでの残り） ---------- */
+            #cursors {
+                position: fixed;
+                inset: 0;
+                z-index: 100;
+                pointer-events: none;
+            }
+            .cursor {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 48px;
+                height: 48px;
+                margin: -24px 0 0 -24px;
+            }
+            .cursor i {
+                position: absolute;
+                inset: 0;
+                border-radius: 50%;
+            }
+            .cursor .ring {
+                inset: 7px;
+                border: 2px dashed rgba(0, 229, 255, 0.9);
+                box-shadow: 0 0 14px var(--neon);
+                animation: spin 3s linear infinite;
+            }
+            .cursor .prog {
+                background: conic-gradient(
+                    from -90deg,
+                    #fff calc(var(--p, 0) * 360deg),
+                    transparent 0
+                );
+                -webkit-mask: radial-gradient(
+                    circle,
+                    transparent 19px,
+                    #000 20px
+                );
+                mask: radial-gradient(circle, transparent 19px, #000 20px);
+                filter: drop-shadow(0 0 6px #fff);
+            }
+            .cursor .dot {
+                inset: 19px;
+                background: #fff;
+                box-shadow:
+                    0 0 12px var(--neon),
+                    0 0 4px #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="c"></canvas>
+        <video id="v" playsinline muted></video>
+        <button
+            id="pauseBtn"
+            class="hidden"
+            data-act="pause"
+            title="一時停止 (Esc)"
+        >
+            ❚❚
+        </button>
+
+        <div id="loading" class="overlay">
+            <div class="logo">
+                <div class="logo-jp">ハンドスラッシュ</div>
+                <div class="logo-en">HAND SLASH</div>
+            </div>
+            <div class="spinner" id="loadSpin"></div>
+            <p id="loadMsg">準備中…</p>
+            <p id="loadErr" class="err"></p>
+            <button id="retryBtn" class="hidden" data-act="retry">
+                もう一度ためす
+            </button>
+        </div>
+
+        <div id="title" class="overlay hidden">
+            <div class="logo">
+                <div class="logo-jp">ハンドスラッシュ</div>
+                <div class="logo-en">HAND SLASH</div>
+                <i class="slash"></i>
+            </div>
+            <div class="panel">
+                <p>
+                    人さし指をすばやく振ってフルーツを切ろう！　ボタンは<b>指を1秒かざす</b>と押せます
+                </p>
+                <div class="menu">
+                    <button class="mode" data-act="classic">
+                        <span class="ico">🍉</span
+                        ><span
+                            ><b>クラシック</b
+                            ><small
+                                >💣と3ミスに気をつけて、どこまで切れるか</small
+                            ></span
+                        ><span class="tag">1P</span>
+                    </button>
+                    <button class="mode time" data-act="time">
+                        <span class="ico">⏱️</span
+                        ><span
+                            ><b>タイムアタック</b
+                            ><small>60秒でいくつ切れるか</small></span
+                        ><span class="tag">1P</span>
+                    </button>
+                    <button class="mode vs" data-act="versus">
+                        <span class="ico">⚔️</span
+                        ><span
+                            ><b>ふたりで対戦</b
+                            ><small>画面を左右に分けて60秒バトル</small></span
+                        ><span class="tag">2P</span>
+                    </button>
+                </div>
+                <div class="row">
+                    <button class="sub" data-act="calibMenu">
+                        🖐 キャリブレーション
+                    </button>
+                    <button class="sub" data-act="howto">あそび方</button>
+                    <button class="sub" data-act="skeleton">骨格: ON</button>
+                    <button class="sub" data-act="sound">サウンド: ON</button>
+                    <button class="sub" data-act="fullscreen">全画面</button>
+                    <button class="sub app-only hidden" data-act="quit">
+                        終了
+                    </button>
+                </div>
+                <p id="bestLine" class="stats-line"></p>
+            </div>
+        </div>
+
+        <div id="calibMenu" class="overlay hidden">
+            <div class="kicker">CALIBRATION</div>
+            <h2>キャリブレーション</h2>
+            <div class="panel">
+                <p>
+                    手の骨格を使って、あなたの手の揺れ・指が届く範囲・振る速さを測り、操作をぴったり合わせます
+                </p>
+                <div class="menu">
+                    <button class="mode" data-act="calibSolo">
+                        <span class="ico">🖐</span
+                        ><span
+                            ><b>ひとり用</b
+                            ><small>1人で遊ぶときの設定</small></span
+                        >
+                    </button>
+                    <button class="mode vs" data-act="calibVersus">
+                        <span class="ico">🤝</span
+                        ><span
+                            ><b>ふたり用</b
+                            ><small
+                                >1P（左）→ 2P（右）の順に測ります</small
+                            ></span
+                        >
+                    </button>
+                </div>
+                <div class="row">
+                    <button class="sub" data-act="calibReset">
+                        測った設定をリセット
+                    </button>
+                    <button class="sub" data-act="back">もどる</button>
+                </div>
+                <p id="calibStatus" class="stats-line"></p>
+            </div>
+        </div>
+
+        <button id="calibCancel" class="sub hidden" data-act="calibCancel">
+            やめる
+        </button>
+
+        <div id="howto" class="overlay hidden">
+            <div class="kicker">HOW TO PLAY</div>
+            <h2>あそび方</h2>
+            <div class="panel">
+                <div class="howto">
+                    <div>
+                        ✋
+                        カメラに手を映して、<b>人さし指</b>をすばやく振るとフルーツが切れます
+                    </div>
+                    <div>
+                        🔥 1回振るだけで3つ以上切ると<b>コンボボーナス</b>
+                    </div>
+                    <div>
+                        🍉
+                        <b>クラシック</b
+                        >：💣を切るか、フルーツを3つ落とすとおしまい
+                    </div>
+                    <div>
+                        ⏱️
+                        <b>タイムアタック / 対戦</b
+                        >：60秒でたくさん切った方が勝ち。💣は −10点
+                    </div>
+                    <div>
+                        ⚔️
+                        <b>ふたりで対戦</b
+                        >：画面の左が1P、右が2P。自分の側だけで手を動かそう
+                    </div>
+                    <div>
+                        ❚❚ 一時停止：上のボタンに指を1秒かざすか、Esc / P /
+                        スペースキー
+                    </div>
+                    <div>
+                        🖐
+                        <b>キャリブレーション</b
+                        >：最初に一度やると、指の届く範囲と振りの速さがあなたに合います
+                    </div>
+                    <div>⌨️ 全画面：F キー ／ 認識の計測表示：D キー</div>
+                    <div>
+                        💡
+                        <b>コツ</b
+                        >：部屋を明るくすると映像のブレが減って、速い動きにもついてきます
+                    </div>
+                </div>
+                <button data-act="back">もどる</button>
+            </div>
+        </div>
+
+        <div id="pause" class="overlay hidden">
+            <div class="kicker">PAUSED</div>
+            <h2>一時停止</h2>
+            <div class="panel">
+                <div class="menu">
+                    <button data-act="resume">▶ 再開</button>
+                    <button class="time" data-act="restart">↻ 最初から</button>
+                </div>
+                <div class="row">
+                    <button class="sub" data-act="sound">サウンド: ON</button>
+                    <button class="sub" data-act="menu">
+                        メニューへもどる
+                    </button>
+                </div>
+                <p class="stats-line">Esc / P / スペースでも再開できます</p>
+            </div>
+        </div>
+
+        <div id="result" class="overlay hidden">
+            <div class="kicker">RESULT</div>
+            <h2 id="resultTitle"></h2>
+            <div class="panel">
+                <div id="resultBody"></div>
+                <div class="menu">
+                    <button data-act="restart">↻ もう一回</button>
+                </div>
+                <div class="row">
+                    <button class="sub" data-act="menu">
+                        メニューへもどる
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="cursors"></div>
+
+        <script type="module">
+            const canvas = document.getElementById("c");
+            const ctx = canvas.getContext("2d");
+            const video = document.getElementById("v");
+            const $ = (id) => document.getElementById(id);
+            const IS_APP = !!window.app;
+            const DEBUG = new URLSearchParams(location.search).has("debug"); // ?debug でカメラなしテスト（window.__hands で指を注入）
+            const FONT = '"Dela Gothic One","Yu Gothic UI","Meiryo",sans-serif';
+            // 日本語フォントは使う文字だけ読み込まれるので、ゲーム中に出る文字を先に読み込んでおく
+            document.fonts
+                ?.load(
+                    '40px "Dela Gothic One"',
+                    "0123456789+−-! ／SCOREBESTGOコンボスイカを切ってスタート準備OK手のひらカメラに向けて止めてください人さし指らくに届く範囲左上右下大きく速回振キャリブレーション完了映ベスト1P2P",
+                )
+                .catch(() => {});
+
+            let W = 0,
+                H = 0,
+                DPR = 1;
+            function resize() {
+                DPR = Math.min(window.devicePixelRatio || 1, 2);
+                W = innerWidth;
+                H = innerHeight;
+                canvas.width = W * DPR;
+                canvas.height = H * DPR;
+                ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+                layoutPlayers();
+            }
+            addEventListener("resize", resize);
+
+            // ---------- フルーツ画像（絵文字を事前描画） ----------
+            const FRUITS = [
+                { e: "🍉", juice: "#ff4d6d" },
+                { e: "🍎", juice: "#fff3bf" },
+                { e: "🍊", juice: "#ffa94d" },
+                { e: "🍋", juice: "#ffe066" },
+                { e: "🍑", juice: "#ffc9a3" },
+                { e: "🍍", juice: "#ffd43b" },
+                { e: "🥝", juice: "#a9e34b" },
+                { e: "🍓", juice: "#ff6b6b" },
+                { e: "🍇", juice: "#be4bdb" },
+                { e: "🥭", juice: "#ffa94d" },
+            ];
+            const BOMB = { e: "💣", juice: "#ffffff", bomb: true };
+            const SPRITE = 160;
+            const sprites = new Map();
+            function sprite(e) {
+                if (sprites.has(e)) return sprites.get(e);
+                const c = document.createElement("canvas");
+                c.width = c.height = SPRITE;
+                const g = c.getContext("2d");
+                g.font = `${SPRITE * 0.8}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`;
+                g.textAlign = "center";
+                g.textBaseline = "middle";
+                g.fillText(e, SPRITE / 2, SPRITE / 2 + SPRITE * 0.05);
+                sprites.set(e, c);
+                return c;
+            }
+
+            // ---------- サウンド ----------
+            let actx = null,
+                muted = false;
+            try {
+                muted = localStorage.getItem("handslash-muted") === "1";
+            } catch {}
+            function audio() {
+                if (!actx)
+                    actx = new (
+                        window.AudioContext || window.webkitAudioContext
+                    )();
+                if (actx.state === "suspended") actx.resume();
+                return actx;
+            }
+            function noise(dur, freq, q, vol) {
+                if (muted) return;
+                const a = audio(),
+                    n = a.sampleRate * dur,
+                    buf = a.createBuffer(1, n, a.sampleRate),
+                    d = buf.getChannelData(0);
+                for (let i = 0; i < n; i++)
+                    d[i] = (Math.random() * 2 - 1) * (1 - i / n) ** 2;
+                const s = a.createBufferSource();
+                s.buffer = buf;
+                const f = a.createBiquadFilter();
+                f.type = "bandpass";
+                f.frequency.value = freq;
+                f.Q.value = q;
+                const gn = a.createGain();
+                gn.gain.value = vol;
+                s.connect(f).connect(gn).connect(a.destination);
+                s.start();
+            }
+            function tone(freq, dur, type = "sine", vol = 0.2, slide = 0) {
+                if (muted) return;
+                const a = audio(),
+                    o = a.createOscillator(),
+                    g = a.createGain(),
+                    t = a.currentTime;
+                o.type = type;
+                o.frequency.setValueAtTime(freq, t);
+                if (slide)
+                    o.frequency.exponentialRampToValueAtTime(
+                        freq * slide,
+                        t + dur,
+                    );
+                g.gain.setValueAtTime(vol, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                o.connect(g).connect(a.destination);
+                o.start(t);
+                o.stop(t + dur);
+            }
+            const sfx = {
+                slice: () => {
+                    noise(0.18, 2500 + Math.random() * 1500, 1.2, 0.6);
+                    tone(
+                        500 + Math.random() * 200,
+                        0.08,
+                        "triangle",
+                        0.08,
+                        0.5,
+                    );
+                },
+                combo: (n) =>
+                    [0, 1, 2].forEach((i) =>
+                        setTimeout(
+                            () =>
+                                tone(
+                                    660 * (1 + i * 0.25) + n * 30,
+                                    0.15,
+                                    "square",
+                                    0.06,
+                                ),
+                            i * 70,
+                        ),
+                    ),
+                miss: () => tone(220, 0.3, "sawtooth", 0.08, 0.6),
+                bomb: () => {
+                    noise(0.9, 120, 0.7, 2.5);
+                    tone(90, 0.8, "sawtooth", 0.2, 0.3);
+                },
+                tick: () => tone(880, 0.12, "square", 0.08),
+                go: () => tone(1320, 0.35, "square", 0.1),
+                click: () => tone(660, 0.08, "triangle", 0.12),
+                end: () =>
+                    [0, 1, 2, 3].forEach((i) =>
+                        setTimeout(
+                            () =>
+                                tone(
+                                    [523, 659, 784, 1047][i],
+                                    0.2,
+                                    "triangle",
+                                    0.12,
+                                ),
+                            i * 110,
+                        ),
+                    ),
+            };
+
+            // ---------- 状態 ----------
+            const MODES = {
+                classic: { players: 1, time: 0, name: "クラシック" },
+                time: { players: 1, time: 60, name: "タイムアタック" },
+                versus: { players: 2, time: 60, name: "ふたりで対戦" },
+            };
+            const PLAYER_COLORS = ["#4dabf7", "#ff6b6b"];
+            // loading | title | howto | ready | countdown | play | paused | ending | result
+            let state = "loading",
+                mode = "classic",
+                pausedFrom = "play";
+            let players = [],
+                elapsed = 0,
+                timeLeft = 0,
+                countdown = 0,
+                resuming = false;
+            let hands = []; // 今のフレームで見えている指先（画面座標）
+            let handLandmarker = null,
+                lastVideoTime = -1;
+            let best = { classic: 0, time: 0 };
+            try {
+                best = {
+                    ...best,
+                    ...JSON.parse(
+                        localStorage.getItem("handslash-best2") || "{}",
+                    ),
+                };
+            } catch {}
+
+            const G = () => H * 1.25; // 重力 (px/s^2)
+
+            // 対戦で両者に同じフルーツが出るよう、同じシードの乱数を使う
+            function rng32(a) {
+                return () => {
+                    a |= 0;
+                    a = (a + 0x6d2b79f5) | 0;
+                    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                };
+            }
+
+            function newPlayer(id, seed, n) {
+                const slot = n > 1 ? ["left", "right"][id] : "solo";
+                return {
+                    id,
+                    speed: calib[slot]?.speed ?? 0.6,
+                    name: n > 1 ? `${id + 1}P` : "",
+                    color: n > 1 ? PLAYER_COLORS[id] : "#7fd3ff",
+                    rng: rng32(seed),
+                    x0: 0,
+                    x1: W,
+                    fruits: [],
+                    pieces: [],
+                    drops: [],
+                    splats: [],
+                    texts: [],
+                    queue: [],
+                    trail: [],
+                    pointer: null,
+                    last: null,
+                    lastSeen: 0,
+                    handSeen: false,
+                    ready: false,
+                    score: 0,
+                    lives: 3,
+                    spawnTimer: 0.8,
+                    comboCount: 0,
+                    comboTimer: 0,
+                    comboX: 0,
+                    comboY: 0,
+                    shake: 0,
+                    flash: 0,
+                };
+            }
+            function layoutPlayers() {
+                players.forEach((p, i) => {
+                    p.x0 = (i * W) / players.length;
+                    p.x1 = ((i + 1) * W) / players.length;
+                });
+            }
+
+            // ---------- 画面切り替え ----------
+            const SCREENS = [
+                "loading",
+                "title",
+                "howto",
+                "calibMenu",
+                "pause",
+                "result",
+            ];
+            function show(id) {
+                for (const s of SCREENS)
+                    $(s).classList.toggle("hidden", s !== id);
+                dwell.clear();
+            }
+            function setPauseBtn(on) {
+                $("pauseBtn").classList.toggle("hidden", !on);
+            }
+
+            function toTitle() {
+                state = "title";
+                players = [];
+                setPauseBtn(false);
+                show("title");
+                setHandSlots(1);
+                $("bestLine").textContent =
+                    `ベスト ─ クラシック ${best.classic} ／ タイムアタック ${best.time}`;
+            }
+
+            function startMode(m) {
+                mode = m;
+                const cfg = MODES[m],
+                    seed = (Math.random() * 2 ** 32) >>> 0;
+                setHandSlots(cfg.players);
+                players = Array.from({ length: cfg.players }, (_, i) =>
+                    newPlayer(i, seed, cfg.players),
+                );
+                layoutPlayers();
+                elapsed = 0;
+                timeLeft = cfg.time;
+                state = "ready";
+                show(null);
+                setPauseBtn(true);
+                for (const p of players) {
+                    const cx = (p.x0 + p.x1) / 2;
+                    launch(p, FRUITS[0], {
+                        x: cx,
+                        y: H * 0.55,
+                        vx: 0,
+                        vy: 0,
+                        float: true,
+                    });
+                    if (p.name)
+                        p.texts.push({
+                            x: cx,
+                            y: H * 0.55 - p.fruits[0].r * 2.6,
+                            s: p.name,
+                            c: p.color,
+                            size: 44,
+                            life: Infinity,
+                            fixed: true,
+                        });
+                    p.texts.push({
+                        x: cx,
+                        y: H * 0.55 - p.fruits[0].r * 1.7,
+                        s:
+                            players.length > 1
+                                ? "スイカを切って準備OK"
+                                : "スイカを切ってスタート！",
+                        c: "#fff",
+                        size: players.length > 1 ? 26 : 30,
+                        life: Infinity,
+                        fixed: true,
+                    });
+                }
+            }
+
+            function startCountdown(isResume) {
+                state = "countdown";
+                countdown = 3;
+                resuming = isResume;
+                sfx.tick();
+            }
+
+            function pause() {
+                if (!["play", "countdown", "ready"].includes(state)) return;
+                pausedFrom = state === "ready" ? "ready" : "play";
+                state = "paused";
+                setPauseBtn(false);
+                show("pause");
+                players.forEach((p) => {
+                    p.trail = [];
+                    p.last = null;
+                });
+            }
+            function resume() {
+                if (state !== "paused") return;
+                show(null);
+                setPauseBtn(true);
+                if (pausedFrom === "ready") state = "ready";
+                else startCountdown(true);
+            }
+
+            function finish() {
+                if (state !== "play") return;
+                state = "ending";
+                setPauseBtn(false);
+                setTimeout(showResult, 1500);
+            }
+
+            function showResult() {
+                state = "result";
+                sfx.end();
+                const body = $("resultBody");
+                if (mode === "versus") {
+                    const [a, b] = players,
+                        win =
+                            a.score === b.score
+                                ? -1
+                                : a.score > b.score
+                                  ? 0
+                                  : 1;
+                    $("resultTitle").textContent =
+                        win < 0
+                            ? "引き分け！"
+                            : `${win ? "2P" : "1P"} の勝ち！`;
+                    const col = (
+                        p,
+                        i,
+                    ) => `<div style="color:${p.color}">${win === i ? '<span class="crown">👑</span>' : ""}
+      <div class="n">${p.name}</div><div class="s" data-to="${p.score}">0</div></div>`;
+                    body.innerHTML = `<div class="scores">${col(a, 0)}<div class="vsmark">VS</div>${col(b, 1)}</div>`;
+                } else {
+                    const s = players[0].score,
+                        isBest = s > best[mode];
+                    if (isBest) {
+                        best[mode] = s;
+                        try {
+                            localStorage.setItem(
+                                "handslash-best2",
+                                JSON.stringify(best),
+                            );
+                        } catch {}
+                    }
+                    $("resultTitle").textContent = isBest
+                        ? "ベスト更新！"
+                        : MODES[mode].name + " 終了";
+                    body.innerHTML = `<div class="scores"><div style="color:var(--accent)">${isBest ? '<span class="crown">🏆</span>' : ""}
+      <div class="n">SCORE</div><div class="s" data-to="${s}">0</div></div></div>
+      <p class="stats-line">BEST ${best[mode]}</p>`;
+                }
+                show("result");
+                // スコアが数え上がる演出
+                const els = [...body.querySelectorAll("[data-to]")],
+                    t0 = performance.now();
+                (function countUp(now) {
+                    const k = Math.min(1, (now - t0) / 900),
+                        e = 1 - (1 - k) ** 3;
+                    els.forEach(
+                        (el) =>
+                            (el.textContent = Math.round(+el.dataset.to * e)),
+                    );
+                    if (k < 1) requestAnimationFrame(countUp);
+                })(t0);
+            }
+
+            // ---------- ボタン操作（マウスのクリック・指を1秒かざす） ----------
+            const actions = {
+                classic: () => startMode("classic"),
+                time: () => startMode("time"),
+                versus: () => startMode("versus"),
+                howto: () => {
+                    state = "howto";
+                    show("howto");
+                },
+                back: toTitle,
+                pause,
+                resume,
+                restart: () => startMode(mode),
+                menu: toTitle,
+                sound: () => {
+                    muted = !muted;
+                    try {
+                        localStorage.setItem(
+                            "handslash-muted",
+                            muted ? "1" : "0",
+                        );
+                    } catch {}
+                    updateSoundLabels();
+                },
+                fullscreen: toggleFullscreen,
+                quit: () => window.app?.quit(),
+                retry: initCamera,
+                calibMenu: () => {
+                    state = "calibMenu";
+                    show("calibMenu");
+                    updateCalibStatus();
+                },
+                calibSolo: () => startCalibration(["solo"]),
+                calibVersus: () => startCalibration(["left", "right"]),
+                calibReset: () => {
+                    calib = {};
+                    saveCalib();
+                    tracks = [];
+                    updateCalibStatus();
+                },
+                calibCancel: endCalibration,
+                skeleton: () => {
+                    showSkeleton = !showSkeleton;
+                    try {
+                        localStorage.setItem(
+                            "handslash-skeleton",
+                            showSkeleton ? "1" : "0",
+                        );
+                    } catch {}
+                    updateSoundLabels();
+                },
+            };
+            let showSkeleton = true;
+            try {
+                showSkeleton =
+                    localStorage.getItem("handslash-skeleton") !== "0";
+            } catch {}
+            function updateSoundLabels() {
+                document
+                    .querySelectorAll('[data-act="sound"]')
+                    .forEach(
+                        (b) =>
+                            (b.textContent = `サウンド: ${muted ? "OFF" : "ON"}`),
+                    );
+                document
+                    .querySelectorAll('[data-act="skeleton"]')
+                    .forEach(
+                        (b) =>
+                            (b.textContent = `骨格: ${showSkeleton ? "ON" : "OFF"}`),
+                    );
+            }
+            function updateCalibStatus() {
+                const s = [
+                    calib.solo && "ひとり用",
+                    calib.left && "1P",
+                    calib.right && "2P",
+                ].filter(Boolean);
+                $("calibStatus").textContent = s.length
+                    ? `測定ずみ：${s.join("・")}`
+                    : "まだ測定していません（測らなくても遊べます）";
+            }
+            function toggleFullscreen() {
+                if (document.fullscreenElement) document.exitFullscreen();
+                else
+                    document.documentElement
+                        .requestFullscreen()
+                        .catch(() => {});
+            }
+            document.addEventListener("click", (e) => {
+                const b = e.target.closest("button[data-act]");
+                if (!b) return;
+                audio();
+                sfx.click();
+                actions[b.dataset.act]?.();
+            });
+            addEventListener("keydown", (e) => {
+                if (state === "calib" && e.key === "Escape") {
+                    endCalibration();
+                    return;
+                }
+                if (
+                    e.key === "Escape" ||
+                    e.key === "p" ||
+                    e.key === "P" ||
+                    e.key === " "
+                ) {
+                    e.preventDefault();
+                    if (state === "paused") resume();
+                    else pause();
+                } else if (e.key === "f" || e.key === "F") toggleFullscreen();
+                else if (e.key === "d" || e.key === "D") stats.on = !stats.on;
+            });
+            addEventListener("blur", () => {
+                if (state === "play" || state === "countdown") pause();
+            });
+
+            const dwell = new Map();
+            let dwellCool = 0;
+            function updateDwell(dt) {
+                dwellCool = Math.max(0, dwellCool - dt);
+                const hovered = new Set();
+                for (const h of hands) {
+                    const b = document
+                        .elementFromPoint(h.x, h.y)
+                        ?.closest?.("button[data-act]");
+                    h.btn = b && !b.disabled ? b : null;
+                    if (h.btn) hovered.add(h.btn);
+                }
+                for (const b of [...dwell.keys()])
+                    if (!hovered.has(b)) {
+                        dwell.delete(b);
+                        b.style.setProperty("--p", 0);
+                    }
+                if (dwellCool <= 0) {
+                    for (const b of hovered) {
+                        const need = b.id === "pauseBtn" ? 1.2 : 1.0,
+                            v = (dwell.get(b) || 0) + dt;
+                        dwell.set(b, v);
+                        b.style.setProperty("--p", Math.min(1, v / need));
+                        if (v >= need) {
+                            dwell.delete(b);
+                            b.style.setProperty("--p", 0);
+                            dwellCool = 0.8;
+                            b.click();
+                            break;
+                        }
+                    }
+                }
+                // カーソルの輪にも同じゲージを出す
+                for (const h of hands)
+                    h.dwellP = h.btn
+                        ? Math.min(
+                              1,
+                              (dwell.get(h.btn) || 0) /
+                                  (h.btn.id === "pauseBtn" ? 1.2 : 1.0),
+                          )
+                        : 0;
+            }
+
+            // ---------- カメラと手の認識 ----------
+            async function loadLandmarker() {
+                const LOCAL = "./node_modules/@mediapipe/tasks-vision/",
+                    CDN =
+                        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/";
+                let lib, base;
+                try {
+                    lib = await import(LOCAL + "vision_bundle.mjs");
+                    base = LOCAL;
+                } catch {
+                    lib = await import(CDN + "vision_bundle.mjs");
+                    base = CDN;
+                }
+                const files = await lib.FilesetResolver.forVisionTasks(
+                    base + "wasm",
+                );
+                const models = [
+                    "./models/hand_landmarker.task",
+                    "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+                ];
+                for (const model of models)
+                    for (const delegate of ["GPU", "CPU"]) {
+                        try {
+                            return await lib.HandLandmarker.createFromOptions(
+                                files,
+                                {
+                                    baseOptions: {
+                                        modelAssetPath: model,
+                                        delegate,
+                                    },
+                                    runningMode: "VIDEO",
+                                    numHands: handSlots,
+                                    // 見つけるときは厳しめ（誤検出防止）、追いかけるときは少し甘め（ブレても見失いにくく）
+                                    minHandDetectionConfidence: 0.6,
+                                    minHandPresenceConfidence: 0.5,
+                                    minTrackingConfidence: 0.4,
+                                },
+                            );
+                        } catch (e) {
+                            console.warn(
+                                "hand model failed",
+                                model,
+                                delegate,
+                                e,
+                            );
+                        }
+                    }
+                throw new Error("手の認識モデルを読み込めませんでした");
+            }
+
+            async function initCamera() {
+                state = "loading";
+                show("loading");
+                $("loadErr").textContent = "";
+                $("retryBtn").classList.add("hidden");
+                $("loadSpin").classList.remove("hidden");
+                if (DEBUG) {
+                    toTitle();
+                    return;
+                }
+                try {
+                    if (!video.srcObject) {
+                        $("loadMsg").textContent = "カメラを起動中…";
+                        // 720p で指先の位置を正確に。60fps 対応のカメラなら 60fps で撮る
+                        video.srcObject =
+                            await navigator.mediaDevices.getUserMedia({
+                                audio: false,
+                                video: {
+                                    facingMode: "user",
+                                    width: { ideal: 1280 },
+                                    height: { ideal: 720 },
+                                    frameRate: { ideal: 60, min: 24 },
+                                },
+                            });
+                        await video.play();
+                    }
+                    if (!handLandmarker) {
+                        $("loadMsg").textContent =
+                            "手の認識モデルを読み込み中…";
+                        handLandmarker = await loadLandmarker();
+                    }
+                    console.log(
+                        "camera and hand model ready",
+                        JSON.stringify(
+                            video.srcObject.getVideoTracks()[0].getSettings(),
+                        ),
+                    );
+                    toTitle();
+                } catch (err) {
+                    console.error(err);
+                    $("loadMsg").textContent = "";
+                    $("loadErr").textContent =
+                        err.name === "NotAllowedError"
+                            ? "カメラの使用が許可されていません。カメラを「許可」にしてから、もう一度ためしてください。"
+                            : err.name === "NotFoundError"
+                              ? "カメラが見つかりません。カメラがつながっているか確認してください。"
+                              : err.name === "NotReadableError"
+                                ? "カメラがほかのアプリで使われています。そのアプリを閉じてください。"
+                                : "起動できませんでした：" +
+                                  (err.message || err);
+                    $("retryBtn").classList.remove("hidden");
+                    $("loadSpin").classList.add("hidden");
+                }
+            }
+
+            // 映像は「画面いっぱい（はみ出しはカット）」＆左右反転で表示するので、座標も同じ変換をする
+            function videoRect() {
+                const vw = video.videoWidth || 1280,
+                    vh = video.videoHeight || 720;
+                const s = Math.max(W / vw, H / vh);
+                return {
+                    w: vw * s,
+                    h: vh * s,
+                    dx: (W - vw * s) / 2,
+                    dy: (H - vh * s) / 2,
+                };
+            }
+
+            // ---------- 手の骨格の解析 ----------
+            // MediaPipe の21点：0=手首, 1-4=親指, 5-8=人さし指(付け根→先), 9-12=中指, 13-16=薬指, 17-20=小指
+            const BONES = [
+                [0, 1],
+                [1, 2],
+                [2, 3],
+                [3, 4],
+                [0, 5],
+                [5, 6],
+                [6, 7],
+                [7, 8],
+                [5, 9],
+                [9, 10],
+                [10, 11],
+                [11, 12],
+                [9, 13],
+                [13, 14],
+                [14, 15],
+                [15, 16],
+                [13, 17],
+                [17, 18],
+                [18, 19],
+                [19, 20],
+                [0, 17],
+            ];
+            const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+            function analyzeHand(lm, r) {
+                // 骨格を画面座標に（左右反転）
+                const P = lm.map((p) => ({
+                    x: (1 - p.x) * r.w + r.dx,
+                    y: p.y * r.h + r.dy,
+                }));
+                // 指が伸びているか：先端が第二関節より手首から十分遠い
+                const ext = (tip, pip) =>
+                    dist(P[0], P[tip]) > dist(P[0], P[pip]) * 1.15;
+                const fingers = {
+                    index: ext(8, 6),
+                    middle: ext(12, 10),
+                    ring: ext(16, 14),
+                    pinky: ext(20, 18),
+                };
+                const others = [
+                    fingers.middle,
+                    fingers.ring,
+                    fingers.pinky,
+                ].filter(Boolean).length;
+                const pose =
+                    fingers.index && others === 0
+                        ? "point"
+                        : fingers.index && others >= 2
+                          ? "open"
+                          : !fingers.index && others === 0
+                            ? "fist"
+                            : "other";
+                // 手のひらの中心：5点の平均なので、指先(8)よりずっと安定している
+                const ids = [0, 5, 9, 13, 17];
+                const center = {
+                    x: avg(ids.map((i) => P[i].x)),
+                    y: avg(ids.map((i) => P[i].y)),
+                };
+                return {
+                    P,
+                    tip: P[8],
+                    center,
+                    pose,
+                    pointing: fingers.index,
+                    palm: Math.max(20, dist(P[0], P[9])),
+                    wrist: lm[0],
+                    ntip: lm[8],
+                };
+            }
+
+            // ---------- キャリブレーション結果で、指の動く範囲を画面に広げる ----------
+            // box は カメラ映像上の正規化座標（0〜1）で、「らくに届く範囲」の四すみ
+            let calib = {};
+            try {
+                calib = JSON.parse(
+                    localStorage.getItem("handslash-calib") || "{}",
+                );
+            } catch {}
+            function saveCalib() {
+                try {
+                    localStorage.setItem(
+                        "handslash-calib",
+                        JSON.stringify(calib),
+                    );
+                } catch {}
+            }
+
+            function slotRegion(slot) {
+                return slot === "left"
+                    ? { x0: 0, x1: W / 2 }
+                    : slot === "right"
+                      ? { x0: W / 2, x1: W }
+                      : { x0: 0, x1: W };
+            }
+            function slotFor(u) {
+                if (state === "calib") return cal.slots[cal.si];
+                return players.length === 2
+                    ? u < 0.5
+                        ? "left"
+                        : "right"
+                    : "solo";
+            }
+            function boxFor(slot) {
+                if (state === "calib")
+                    return cal.step === "swing" ? cal.newBox : null; // 測っている間はそのままの位置
+                return calib[slot] || null;
+            }
+            // 画面座標 (ix, iy) → 範囲を広げた画面座標。slot を決めた手の位置 su をそろえて渡すと、骨格全体が同じ変換になる
+            function mapPoint(ix, iy, su, clamp = true) {
+                const r = videoRect(),
+                    u = (ix - r.dx) / r.w,
+                    v = (iy - r.dy) / r.h;
+                const slot = slotFor(su ?? u),
+                    b = boxFor(slot),
+                    R = slotRegion(slot);
+                let x = ix,
+                    y = iy;
+                if (b) {
+                    x =
+                        R.x0 +
+                        (R.x1 - R.x0) *
+                            (0.08 + (0.84 * (u - b.u0)) / (b.u1 - b.u0));
+                    y = H * (0.08 + (0.84 * (v - b.v0)) / (b.v1 - b.v0));
+                }
+                if (clamp) {
+                    x = Math.max(R.x0 + 1, Math.min(R.x1 - 1, x));
+                    y = Math.max(0, Math.min(H, y));
+                }
+                return { x, y };
+            }
+
+            function detectHands(now) {
+                const t = now / 1000,
+                    r = videoRect();
+                let raw;
+                if (DEBUG) {
+                    // カメラなしテスト：window.__hands = [{x, y}] を人さし指を伸ばした手として扱う
+                    raw = (window.__hands || []).map((h) => ({
+                        P: null,
+                        tip: { x: h.x + (h.fx || 0), y: h.y + (h.fy || 0) },
+                        center: { x: h.x, y: h.y },
+                        pose: "point",
+                        pointing: true,
+                        palm: 80,
+                    }));
+                } else {
+                    if (
+                        !handLandmarker ||
+                        video.readyState < 2 ||
+                        video.currentTime === lastVideoTime
+                    )
+                        return false;
+                    lastVideoTime = video.currentTime;
+                    const t0 = performance.now();
+                    const res = handLandmarker.detectForVideo(video, now);
+                    raw = (res.landmarks || []).map((lm) => analyzeHand(lm, r));
+                    // 同じ手を2回検出していたら1つにまとめる
+                    raw = raw.filter(
+                        (h, i) =>
+                            !raw
+                                .slice(0, i)
+                                .some(
+                                    (o) =>
+                                        Math.hypot(
+                                            o.wrist.x - h.wrist.x,
+                                            o.wrist.y - h.wrist.y,
+                                        ) < 0.08 &&
+                                        Math.hypot(
+                                            o.ntip.x - h.ntip.x,
+                                            o.ntip.y - h.ntip.y,
+                                        ) < 0.08,
+                                ),
+                    );
+                    stats.frames++;
+                    stats.ms += performance.now() - t0;
+                    if (raw.length) stats.found++;
+                }
+                // 前のフレームの手と対応づけて（手のひらの中心どうしで比べる）、手ごとに揺れ取りをかける
+                const next = [];
+                for (const h of raw) {
+                    let tr = null,
+                        bd = Math.max(W, H) * 0.25;
+                    for (const o of tracks) {
+                        if (next.includes(o)) continue;
+                        const d = Math.hypot(
+                            o.cx - h.center.x,
+                            o.cy - h.center.y,
+                        );
+                        if (d < bd) {
+                            bd = d;
+                            tr = o;
+                        }
+                    }
+                    if (!tr) {
+                        const c =
+                            state === "calib" ? 0.5 : (calib.cutoff ?? 0.5);
+                        tr = {
+                            fx: oneEuro(c),
+                            fy: oneEuro(c),
+                            ox: oneEuro(1.0, 0.005),
+                            oy: oneEuro(1.0, 0.005),
+                            off: null,
+                            age: 0,
+                        };
+                    }
+                    // 指先 ＝ 手のひらの中心 ＋ 中心から指先へのずれ
+                    // 腕を振ると中心が動くので切る動きはすぐ伝わる。指先の点だけが飛んだときは、ずれの変化を1コマあたり制限して無視する
+                    let off = {
+                        x: h.tip.x - h.center.x,
+                        y: h.tip.y - h.center.y,
+                    };
+                    if (tr.off) {
+                        const step = Math.hypot(
+                                off.x - tr.off.x,
+                                off.y - tr.off.y,
+                            ),
+                            maxStep = h.palm * 0.35;
+                        if (step > maxStep)
+                            off = {
+                                x:
+                                    tr.off.x +
+                                    ((off.x - tr.off.x) * maxStep) / step,
+                                y:
+                                    tr.off.y +
+                                    ((off.y - tr.off.y) * maxStep) / step,
+                            };
+                    }
+                    tr.off = off;
+                    tr.cx = h.center.x;
+                    tr.cy = h.center.y;
+                    tr.rx = h.center.x + off.x;
+                    tr.ry = h.center.y + off.y; // 飛びを取りのぞいた（揺れ取り前の）指先
+                    tr.ix = tr.fx(h.center.x, t) + tr.ox(off.x, t);
+                    tr.iy = tr.fy(h.center.y, t) + tr.oy(off.y, t);
+                    tr.age++;
+                    tr.h = h;
+                    next.push(tr);
+                }
+                tracks = next;
+                // 1フレームだけ現れた手は誤検出のことが多いので、2フレーム続いてから使う（テスト時はすぐ）
+                hands = tracks
+                    .filter((o) => o.age >= 2 || DEBUG)
+                    .map((o) => {
+                        const u = (o.ix - r.dx) / r.w,
+                            v = (o.iy - r.dy) / r.h,
+                            m = mapPoint(o.ix, o.iy, u);
+                        // 骨格もカーソルと同じ変換で動かす（揺れ取り後の指先に合わせてずらす）
+                        const ox = o.ix - o.rx,
+                            oy = o.iy - o.ry;
+                        const S =
+                            o.h.P &&
+                            o.h.P.map((p) =>
+                                mapPoint(p.x + ox, p.y + oy, u, false),
+                            );
+                        return {
+                            x: m.x,
+                            y: m.y,
+                            ix: o.ix,
+                            iy: o.iy,
+                            rx: o.rx,
+                            ry: o.ry,
+                            u,
+                            v,
+                            S,
+                            pose: o.h.pose,
+                            pointing: o.h.pointing,
+                            palm: o.h.palm,
+                        };
+                    });
+                return true;
+            }
+            let tracks = [];
+
+            // One Euro フィルター：ゆっくりの時は揺れをしっかり抑え、速い時はすぐ追いつく
+            function oneEuro(minCutoff = 0.5, beta = 0.03, dCutoff = 2.0) {
+                let px = null,
+                    pdx = 0,
+                    pt = 0;
+                const alpha = (cutoff, dt) =>
+                    1 / (1 + 1 / (2 * Math.PI * cutoff * dt));
+                return (x, t) => {
+                    if (px === null) {
+                        px = x;
+                        pt = t;
+                        return x;
+                    }
+                    const dt = Math.max(t - pt, 1e-3);
+                    pt = t;
+                    pdx += alpha(dCutoff, dt) * ((x - px) / dt - pdx);
+                    px +=
+                        alpha(minCutoff + beta * Math.abs(pdx), dt) * (x - px);
+                    return px;
+                };
+            }
+
+            // 1人のときは手を1つだけ探す（関係ないものを手と間違えにくくなる）
+            let handSlots = 1;
+            function setHandSlots(n) {
+                if (!handLandmarker || handSlots === n) return;
+                handSlots = n;
+                tracks = [];
+                handLandmarker.setOptions({ numHands: n });
+            }
+
+            // D キーで表示する計測値（カメラのコマ数・手が見つかった割合・認識にかかった時間）
+            const stats = {
+                on: false,
+                frames: 0,
+                found: 0,
+                ms: 0,
+                since: 0,
+                text: "",
+            };
+            function updateStats(now) {
+                if (now - stats.since < 1000) return;
+                const sec = (now - stats.since) / 1000,
+                    fps = stats.frames / sec;
+                const cam =
+                    video.srcObject?.getVideoTracks()[0]?.getSettings() || {};
+                stats.text =
+                    `カメラ ${cam.width || "-"}x${cam.height || "-"} ${Math.round(cam.frameRate || 0)}fps ／ 認識 ${fps.toFixed(0)}回/秒` +
+                    ` ／ 手を検出 ${stats.frames ? Math.round((stats.found / stats.frames) * 100) : 0}% ／ 1回 ${stats.frames ? (stats.ms / stats.frames).toFixed(1) : 0}ms`;
+                stats.frames = stats.found = stats.ms = 0;
+                stats.since = now;
+            }
+
+            // それぞれのプレイヤーに、自分の側にある指を割り当てる
+            function updatePointers(t) {
+                const pool = [...hands];
+                for (const p of players) {
+                    let pick = null,
+                        bd = Infinity;
+                    for (const h of pool) {
+                        if (h.x < p.x0 || h.x >= p.x1) continue;
+                        const d = p.pointer
+                            ? Math.hypot(h.x - p.pointer.x, h.y - p.pointer.y)
+                            : 0;
+                        if (d < bd) {
+                            bd = d;
+                            pick = h;
+                        }
+                    }
+                    if (!pick) {
+                        // 速く振ると映像がブレて一瞬見失うので、少しのあいだは最後の位置を覚えておく
+                        if (p.pointer && t - p.lastSeen < LOST_GRACE) continue;
+                        p.pointer = null;
+                        p.trail = [];
+                        p.last = null;
+                        p.handSeen = false;
+                        continue;
+                    }
+                    pool.splice(pool.indexOf(pick), 1);
+                    p.lastSeen = t;
+                    p.pointer = { ...pick }; // 揺れ取りは detectHands のフィルターで済んでいる
+                    p.handSeen = true;
+                    if (state === "ready" || state === "play") {
+                        const pt = { x: p.pointer.x, y: p.pointer.y, t };
+                        // 見失っていたあいだの動きも、前の位置から今の位置への一直線として切る
+                        if (p.last && t - p.last.t <= LOST_GRACE)
+                            checkSlices(p, p.last, pt);
+                        p.last = pt;
+                        p.trail.push(pt);
+                    }
+                }
+            }
+            const LOST_GRACE = 0.25; // 手を見失っても軌跡をつなぐ時間（秒）
+
+            // ---------- キャリブレーション ----------
+            // 1) 手を止めて揺れの量を測る → 2) らくに届く範囲の四すみで指を止める → 3) 3回振って振りの速さを測る
+            const CORNERS = [
+                ["左上", 0, 0],
+                ["右上", 1, 0],
+                ["右下", 1, 1],
+                ["左下", 0, 1],
+            ];
+            let cal = null;
+
+            function startCalibration(slots) {
+                state = "calib";
+                players = [];
+                show(null);
+                setPauseBtn(false);
+                $("calibCancel").classList.remove("hidden");
+                setHandSlots(slots[0] === "solo" ? 1 : 2);
+                cal = { slots, si: 0 };
+                resetCalStep("hand");
+            }
+            function resetCalStep(step) {
+                Object.assign(cal, {
+                    step,
+                    hold: 0,
+                    samples: [],
+                    corners: step === "hand" ? [] : cal.corners,
+                    peaks: [],
+                    swing: 0,
+                    prev: null,
+                    msg: "",
+                    lastT: null,
+                    hand: null,
+                });
+                if (step === "hand") cal.newBox = null;
+            }
+            function endCalibration() {
+                $("calibCancel").classList.add("hidden");
+                cal = null;
+                tracks = [];
+                toTitle();
+            }
+
+            function updateCalib(t) {
+                const dt =
+                    cal.lastT === null ? 0 : Math.min(0.1, t - cal.lastT);
+                cal.lastT = t;
+                if (cal.step === "done") {
+                    if (t - cal.doneAt > 1.6) endCalibration();
+                    return;
+                }
+                const slot = cal.slots[cal.si];
+                const h = hands.find(
+                    (h) =>
+                        slot === "solo" ||
+                        (slot === "left" ? h.u < 0.5 : h.u >= 0.5),
+                );
+                cal.hand = h || null;
+                if (!h) {
+                    cal.hold = 0;
+                    cal.samples = [];
+                    cal.prev = null;
+                    return;
+                }
+
+                cal.samples.push({ u: h.u, v: h.v, rx: h.rx, ry: h.ry, t });
+                cal.samples = cal.samples.filter((s) => t - s.t < 0.4);
+                const us = cal.samples.map((s) => s.u),
+                    vs = cal.samples.map((s) => s.v);
+                const spread = Math.max(
+                    Math.max(...us) - Math.min(...us),
+                    Math.max(...vs) - Math.min(...vs),
+                );
+                const still = cal.samples.length >= 5 && spread < 0.025;
+
+                if (cal.step === "hand") {
+                    cal.hold = still && h.pose !== "fist" ? cal.hold + dt : 0;
+                    if (cal.hold >= 1.5) {
+                        // 止めているときの細かい揺れ（揺れ取り前の指先, px）
+                        const mx = avg(cal.samples.map((s) => s.rx)),
+                            my = avg(cal.samples.map((s) => s.ry));
+                        cal.noise = Math.sqrt(
+                            avg(
+                                cal.samples.map(
+                                    (s) => (s.rx - mx) ** 2 + (s.ry - my) ** 2,
+                                ),
+                            ),
+                        );
+                        sfx.tick();
+                        resetCalStep("corner");
+                    }
+                } else if (cal.step === "corner") {
+                    const last = cal.corners[cal.corners.length - 1];
+                    const moved =
+                        !last || Math.hypot(h.u - last.u, h.v - last.v) > 0.05;
+                    cal.hold = still && moved ? cal.hold + dt : 0;
+                    if (cal.hold >= 0.7) {
+                        cal.corners.push({ u: avg(us), v: avg(vs) });
+                        sfx.tick();
+                        cal.hold = 0;
+                        cal.samples = [];
+                        if (cal.corners.length === 4) {
+                            const [tl, tr, br, bl] = cal.corners;
+                            const box = {
+                                u0: (tl.u + bl.u) / 2,
+                                u1: (tr.u + br.u) / 2,
+                                v0: (tl.v + tr.v) / 2,
+                                v1: (bl.v + br.v) / 2,
+                            };
+                            if (
+                                box.u1 - box.u0 < 0.05 ||
+                                box.v1 - box.v0 < 0.05
+                            ) {
+                                resetCalStep("corner");
+                                cal.corners = [];
+                                cal.msg =
+                                    "範囲がせますぎました。もう少し大きく動かしてください";
+                            } else {
+                                cal.newBox = box;
+                                resetCalStep("swing");
+                            }
+                        }
+                    }
+                } else if (cal.step === "swing") {
+                    // 広げた範囲での指の速さ。速くなって→遅くなったら1回の振りとして数える
+                    const m = mapPoint(h.ix, h.iy, h.u, false),
+                        S = Math.min(W, H);
+                    if (cal.prev && dt > 0) {
+                        const sp =
+                            Math.hypot(m.x - cal.prev.x, m.y - cal.prev.y) / dt;
+                        if (sp > S * 0.6) cal.swing = Math.max(cal.swing, sp);
+                        else if (cal.swing && sp < S * 0.3) {
+                            cal.peaks.push(cal.swing);
+                            cal.swing = 0;
+                            sfx.slice();
+                        }
+                    }
+                    cal.prev = m;
+                    if (cal.peaks.length >= 3) finishCalSlot(slot);
+                }
+            }
+            const avg = (a) => a.reduce((s, v) => s + v, 0) / a.length;
+
+            function finishCalSlot(slot) {
+                const S = Math.min(W, H),
+                    r = videoRect(),
+                    b = cal.newBox,
+                    R = slotRegion(slot);
+                const peaks = [...cal.peaks].sort((a, b) => a - b),
+                    median = peaks[1];
+                // 切れる速さ ＝ あなたの振りの速さの35%（速すぎ・遅すぎにならないよう制限）
+                const speed = Math.max(0.3, Math.min(1.2, (median * 0.35) / S));
+                calib[slot] = { ...b, speed };
+                // 範囲を広げたぶん揺れも大きく見えるので、揺れが大きい人ほど揺れ取りを強くする
+                const scale = (0.84 * (R.x1 - R.x0)) / ((b.u1 - b.u0) * r.w);
+                // 強くしすぎると動きが遅れるので 0.35〜1.0 の範囲に収める
+                const cutoff = Math.max(
+                    0.35,
+                    Math.min(
+                        1.0,
+                        0.8 / Math.sqrt(Math.max(1, (cal.noise || 1) * scale)),
+                    ),
+                );
+                calib.cutoff =
+                    cal.si === 0
+                        ? cutoff
+                        : Math.min(calib.cutoff ?? cutoff, cutoff);
+                saveCalib();
+                sfx.combo(3);
+                cal.si++;
+                if (cal.si < cal.slots.length) {
+                    resetCalStep("hand");
+                    tracks = [];
+                } else {
+                    cal.step = "done";
+                    cal.doneAt = cal.lastT;
+                    tracks = [];
+                }
+            }
+
+            function calibLabel(slot) {
+                return slot === "left"
+                    ? "1P（左側の人）"
+                    : slot === "right"
+                      ? "2P（右側の人）"
+                      : "";
+            }
+
+            function drawCalib(t) {
+                const slot =
+                        cal.slots[cal.si] ?? cal.slots[cal.slots.length - 1],
+                    R = slotRegion(slot),
+                    cx = (R.x0 + R.x1) / 2;
+                // 対象外の半分は暗くする
+                if (slot !== "solo") {
+                    ctx.fillStyle = "rgba(0,0,0,.6)";
+                    ctx.fillRect(slot === "left" ? W / 2 : 0, 0, W / 2, H);
+                }
+                const head = calibLabel(slot);
+                if (head && cal.step !== "done")
+                    text(
+                        head,
+                        cx,
+                        40,
+                        30,
+                        slot === "left" ? PLAYER_COLORS[0] : PLAYER_COLORS[1],
+                    );
+                let main = "",
+                    sub = "";
+                if (cal.step === "hand") {
+                    main = "手のひらをカメラに向けて、止めてください";
+                    sub = "骨格がぴったり重なっているか見てください";
+                } else if (cal.step === "corner") {
+                    const c = CORNERS[cal.corners.length];
+                    main = `人さし指を、らくに届く範囲の「${c[0]}」で止めてください`;
+                    sub =
+                        cal.msg ||
+                        "画面のはしまで届かなくてOK。体を動かさずに届くところで";
+                    // 目安の矢印（その方向のすみ）
+                    const ax = R.x0 + (R.x1 - R.x0) * (0.1 + 0.8 * c[1]),
+                        ay = H * (0.15 + 0.7 * c[2]);
+                    ctx.save();
+                    ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 6);
+                    ctx.strokeStyle = "#ffd43b";
+                    ctx.lineWidth = 8;
+                    ctx.lineCap = "round";
+                    const sx = c[1] ? -1 : 1,
+                        sy = c[2] ? -1 : 1;
+                    ctx.beginPath();
+                    ctx.moveTo(ax + sx * 60, ay);
+                    ctx.lineTo(ax, ay);
+                    ctx.lineTo(ax, ay + sy * 60);
+                    ctx.stroke();
+                    ctx.restore();
+                    // 記録したすみ（そのままの位置で表示）
+                    const r = videoRect();
+                    for (const k of cal.corners) {
+                        ctx.fillStyle = "#69db7c";
+                        ctx.beginPath();
+                        ctx.arc(
+                            k.u * r.w + r.dx,
+                            k.v * r.h + r.dy,
+                            10,
+                            0,
+                            Math.PI * 2,
+                        );
+                        ctx.fill();
+                    }
+                    text(`${cal.corners.length} / 4`, cx, H - 50, 24, "#fff");
+                } else if (cal.step === "swing") {
+                    main = `大きく速く、3回振ってください（${cal.peaks.length} / 3）`;
+                    sub = "いつもフルーツを切るときの速さで";
+                } else if (cal.step === "done") {
+                    main = "キャリブレーション完了！";
+                    sub = "";
+                }
+                const maxW = (R.x1 - R.x0) * 0.92;
+                text(
+                    main,
+                    cx,
+                    H * 0.16,
+                    slot === "solo" ? 34 : 24,
+                    "#fff",
+                    "center",
+                    maxW,
+                );
+                if (sub)
+                    text(
+                        sub,
+                        cx,
+                        H * 0.16 + 44,
+                        slot === "solo" ? 20 : 16,
+                        "#ffe066",
+                        "center",
+                        maxW,
+                    );
+
+                // 止めている時間の進み具合（指先のまわりの輪）
+                const h = cal.hand;
+                if (h && cal.hold > 0) {
+                    const need = cal.step === "hand" ? 1.5 : 0.7;
+                    ctx.strokeStyle = "#69db7c";
+                    ctx.lineWidth = 6;
+                    ctx.beginPath();
+                    ctx.arc(
+                        h.x,
+                        h.y,
+                        34,
+                        -Math.PI / 2,
+                        -Math.PI / 2 +
+                            Math.PI * 2 * Math.min(1, cal.hold / need),
+                    );
+                    ctx.stroke();
+                }
+                if (!h && cal.step !== "done")
+                    text(
+                        "✋ 手をカメラに映してください",
+                        cx,
+                        H / 2,
+                        26,
+                        "#fff",
+                        "center",
+                        maxW,
+                    );
+            }
+
+            function drawCursors() {
+                const box = $("cursors");
+                while (box.children.length < hands.length) {
+                    box.appendChild(
+                        Object.assign(document.createElement("div"), {
+                            className: "cursor",
+                            innerHTML:
+                                '<i class="ring"></i><i class="prog"></i><i class="dot"></i>',
+                        }),
+                    );
+                }
+                [...box.children].forEach((el, i) => {
+                    const h = hands[i];
+                    el.style.display = h ? "block" : "none";
+                    if (h) {
+                        el.style.transform = `translate(${h.x}px, ${h.y}px)`;
+                        el.style.setProperty("--p", h.dwellP || 0);
+                    }
+                });
+            }
+
+            // ---------- フルーツ ----------
+            function launch(p, kind, o) {
+                const rw = p.x1 - p.x0;
+                const r =
+                    Math.max(30, Math.min(80, Math.min(rw, H) * 0.085)) *
+                    (kind.bomb ? 0.9 : 1);
+                let { x, y, vx, vy } = o;
+                if (x === undefined) {
+                    x = p.x0 + rw * (0.15 + o.xr * 0.7);
+                    y = H + r;
+                    const peakY = H * (0.15 + o.peak * 0.3);
+                    vy = -Math.sqrt(2 * G() * (H + r - peakY));
+                    const flight = (2 * -vy) / G();
+                    vx = (p.x0 + rw * (0.3 + o.tx * 0.4) - x) / flight;
+                }
+                p.fruits.push({
+                    kind,
+                    x,
+                    y,
+                    baseY: y,
+                    vx,
+                    vy,
+                    r,
+                    rot: Math.random() * 6,
+                    vr: (Math.random() - 0.5) * 4,
+                    float: !!o.float,
+                    t: 0,
+                });
+            }
+
+            function spawnWave(p) {
+                const lvl = Math.min(
+                    1,
+                    elapsed / (mode === "classic" ? 90 : 50),
+                );
+                const count = 1 + Math.floor(p.rng() * (1.5 + lvl * 3));
+                const bombChance = 0.08 + lvl * 0.14;
+                let delay = 0;
+                for (let i = 0; i < count; i++) {
+                    const bomb = p.rng() < bombChance,
+                        kind = FRUITS[Math.floor(p.rng() * FRUITS.length)];
+                    p.queue.push({
+                        at: elapsed + delay,
+                        kind: bomb ? BOMB : kind,
+                        xr: p.rng(),
+                        peak: p.rng(),
+                        tx: p.rng(),
+                    });
+                    delay += 0.12 + p.rng() * 0.2;
+                }
+                p.spawnTimer = 1.6 - lvl * 0.8 + p.rng() * 0.5;
+            }
+
+            function segDist(px, py, ax, ay, bx, by) {
+                const dx = bx - ax,
+                    dy = by - ay,
+                    l2 = dx * dx + dy * dy;
+                let t = l2 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
+                t = Math.max(0, Math.min(1, t));
+                return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+            }
+
+            function checkSlices(p, a, b) {
+                const dist = Math.hypot(b.x - a.x, b.y - a.y),
+                    span = Math.max(b.t - a.t, 1 / 120);
+                if (dist / span < Math.min(W, H) * p.speed) return; // ゆっくり動かしても切れない（速さはキャリブレーションで調整）
+                const ang = Math.atan2(b.y - a.y, b.x - a.x);
+                for (const f of [...p.fruits]) {
+                    if (segDist(f.x, f.y, a.x, a.y, b.x, b.y) < f.r * 1.1)
+                        sliceFruit(p, f, ang);
+                }
+            }
+
+            function sliceFruit(p, f, ang) {
+                const k = f.kind;
+                p.fruits.splice(p.fruits.indexOf(f), 1);
+                if (k.bomb) {
+                    explode(p, f);
+                    return;
+                }
+                const nx = -Math.sin(ang),
+                    ny = Math.cos(ang),
+                    push = f.r * 2.2;
+                for (const side of [-1, 1]) {
+                    p.pieces.push({
+                        kind: k,
+                        x: f.x,
+                        y: f.y,
+                        r: f.r,
+                        rot: f.rot,
+                        cut: ang - f.rot,
+                        side,
+                        vx: f.vx * 0.6 + nx * push * side,
+                        vy: Math.min(f.vy, 0) * 0.4 + ny * push * side - 80,
+                        vr: side * (1.5 + Math.random() * 2),
+                        life: 2.5,
+                    });
+                }
+                for (let i = 0; i < 22; i++) {
+                    const a = Math.random() * Math.PI * 2,
+                        s = 80 + Math.random() * 380;
+                    p.drops.push({
+                        x: f.x,
+                        y: f.y,
+                        vx: Math.cos(a) * s,
+                        vy: Math.sin(a) * s - 120,
+                        r: 2 + Math.random() * 5,
+                        c: k.juice,
+                        life: 0.6 + Math.random() * 0.5,
+                    });
+                }
+                p.splats.push({
+                    x: f.x,
+                    y: f.y,
+                    r: f.r * (1.1 + Math.random() * 0.5),
+                    c: k.juice,
+                    life: 3,
+                    rot: Math.random() * 6,
+                });
+                sfx.slice();
+
+                if (f.float) {
+                    p.ready = true;
+                    p.texts = p.texts.filter((t) => !t.fixed);
+                    p.texts.push({
+                        x: f.x,
+                        y: f.y - 60,
+                        s: "OK!",
+                        c: p.color,
+                        size: 48,
+                        life: 1,
+                        vy: -40,
+                    });
+                    if (players.every((q) => q.ready)) startCountdown(false);
+                    return;
+                }
+                if (state !== "play") return;
+                p.score += 1;
+                p.comboCount++;
+                p.comboTimer = 0.25;
+                p.comboX = f.x;
+                p.comboY = f.y;
+                p.texts.push({
+                    x: f.x,
+                    y: f.y,
+                    s: "+1",
+                    c: "#fff",
+                    size: 28,
+                    life: 0.7,
+                    vy: -60,
+                });
+            }
+
+            function explode(p, f) {
+                sfx.bomb();
+                p.shake = 0.6;
+                p.flash = 1;
+                for (let i = 0; i < 60; i++) {
+                    const a = Math.random() * Math.PI * 2,
+                        s = 100 + Math.random() * 700;
+                    p.drops.push({
+                        x: f.x,
+                        y: f.y,
+                        vx: Math.cos(a) * s,
+                        vy: Math.sin(a) * s,
+                        r: 2 + Math.random() * 6,
+                        c: Math.random() < 0.5 ? "#ffd43b" : "#ff6b00",
+                        life: 0.5 + Math.random() * 0.8,
+                    });
+                }
+                if (state !== "play") return;
+                if (mode === "classic") {
+                    p.lives = 0;
+                    finish();
+                } else {
+                    p.score = Math.max(0, p.score - 10);
+                    p.texts.push({
+                        x: f.x,
+                        y: f.y,
+                        s: "−10",
+                        c: "#ff6b6b",
+                        size: 48,
+                        life: 1,
+                        vy: -50,
+                    });
+                }
+            }
+
+            // ---------- メインループ ----------
+            let last = performance.now();
+            function frame(now) {
+                const dt = Math.min(0.05, (now - last) / 1000);
+                last = now;
+                if (detectHands(now)) {
+                    updatePointers(now / 1000);
+                    if (state === "calib") updateCalib(now / 1000);
+                }
+                updateStats(now);
+                updateDwell(dt);
+                drawCursors();
+                update(dt, now / 1000);
+                draw(now / 1000);
+                requestAnimationFrame(frame);
+            }
+
+            let goTimer = 0,
+                frameDt = 0;
+            function update(dt, t) {
+                frameDt = dt;
+                goTimer = Math.max(0, goTimer - dt);
+                if (state === "countdown") {
+                    const before = Math.ceil(countdown);
+                    countdown -= dt;
+                    if (countdown <= 0) {
+                        state = "play";
+                        sfx.go();
+                        goTimer = 0.8;
+                    } else if (Math.ceil(countdown) !== before) sfx.tick();
+                }
+                if (state === "play") {
+                    elapsed += dt;
+                    if (timeLeft > 0) {
+                        timeLeft -= dt;
+                        if (timeLeft <= 0) {
+                            timeLeft = 0;
+                            finish();
+                        }
+                    }
+                    for (const p of players) {
+                        p.spawnTimer -= dt;
+                        if (p.spawnTimer <= 0) spawnWave(p);
+                        while (p.queue.length && p.queue[0].at <= elapsed) {
+                            const q = p.queue.shift();
+                            launch(p, q.kind, q);
+                        }
+                    }
+                }
+                // 一時停止中・再開カウントダウン中は止める
+                const moving =
+                    state === "ready" ||
+                    state === "play" ||
+                    state === "ending" ||
+                    (state === "countdown" && !resuming);
+                for (const p of players) {
+                    p.trail = p.trail.filter((q) => t - q.t < 0.15);
+                    if (!moving) continue;
+                    stepPlayer(p, dt);
+                }
+            }
+
+            function stepPlayer(p, dt) {
+                const g = G();
+                for (const f of [...p.fruits]) {
+                    f.t += dt;
+                    if (f.float) {
+                        f.y = f.baseY + Math.sin(f.t * 2.5) * 8;
+                        f.rot += dt * 0.6;
+                        continue;
+                    }
+                    f.vy += g * dt;
+                    f.x += f.vx * dt;
+                    f.y += f.vy * dt;
+                    f.rot += f.vr * dt;
+                    if (f.vy > 0 && f.y - f.r > H) {
+                        p.fruits.splice(p.fruits.indexOf(f), 1);
+                        if (
+                            !f.kind.bomb &&
+                            state === "play" &&
+                            mode === "classic"
+                        ) {
+                            p.lives--;
+                            sfx.miss();
+                            p.texts.push({
+                                x: Math.max(
+                                    p.x0 + 40,
+                                    Math.min(p.x1 - 40, f.x),
+                                ),
+                                y: H - 50,
+                                s: "✖",
+                                c: "#ff6b6b",
+                                size: 48,
+                                life: 0.9,
+                                vy: -40,
+                            });
+                            if (p.lives <= 0) finish();
+                        }
+                    }
+                }
+                for (const q of p.pieces) {
+                    q.vy += g * dt;
+                    q.x += q.vx * dt;
+                    q.y += q.vy * dt;
+                    q.rot += q.vr * dt;
+                    q.life -= dt;
+                }
+                p.pieces = p.pieces.filter(
+                    (q) => q.life > 0 && q.y - q.r < H + 50,
+                );
+                for (const d of p.drops) {
+                    d.vy += g * 0.6 * dt;
+                    d.x += d.vx * dt;
+                    d.y += d.vy * dt;
+                    d.life -= dt;
+                }
+                p.drops = p.drops.filter((d) => d.life > 0);
+                for (const s of p.splats) s.life -= dt;
+                p.splats = p.splats.filter((s) => s.life > 0);
+                for (const x of p.texts) {
+                    x.life -= dt;
+                    if (x.vy) x.y += x.vy * dt;
+                }
+                p.texts = p.texts.filter((x) => x.life > 0);
+
+                // コンボ判定：一振りで3つ以上
+                if (p.comboTimer > 0) {
+                    p.comboTimer -= dt;
+                    if (p.comboTimer <= 0) {
+                        if (p.comboCount >= 3 && state === "play") {
+                            p.score += p.comboCount;
+                            sfx.combo(p.comboCount);
+                            p.texts.push({
+                                x: p.comboX,
+                                y: p.comboY - 40,
+                                s: `${p.comboCount}コンボ！ +${p.comboCount}`,
+                                c: "#ffd43b",
+                                size: 40,
+                                life: 1.2,
+                                vy: -50,
+                            });
+                        }
+                        p.comboCount = 0;
+                    }
+                }
+                p.shake = Math.max(0, p.shake - dt);
+                p.flash = Math.max(0, p.flash - dt * 2);
+            }
+
+            // ---------- 描画 ----------
+            function text(
+                s,
+                x,
+                y,
+                size,
+                color,
+                align = "center",
+                maxW = Infinity,
+            ) {
+                ctx.font = `${size}px ${FONT}`;
+                const w = ctx.measureText(s).width;
+                if (w > maxW) {
+                    size *= maxW / w;
+                    ctx.font = `${size}px ${FONT}`;
+                } // はみ出すときは小さくする
+                ctx.textAlign = align;
+                ctx.textBaseline = "middle";
+                ctx.lineJoin = "round";
+                ctx.lineWidth = Math.max(4, size / 6);
+                ctx.strokeStyle = "rgba(5,6,20,.75)";
+                ctx.strokeText(s, x, y);
+                // 大きい文字はネオン風に光らせる
+                if (size >= 36) {
+                    ctx.save();
+                    ctx.shadowColor = color;
+                    ctx.shadowBlur = size / 3;
+                    ctx.fillStyle = color;
+                    ctx.fillText(s, x, y);
+                    ctx.restore();
+                }
+                ctx.fillStyle = color;
+                ctx.fillText(s, x, y);
+            }
+
+            // メニュー画面の背景にふわふわ浮かぶフルーツ
+            let deco = [];
+            function drawDeco(dt, t) {
+                const menu = [
+                    "loading",
+                    "title",
+                    "howto",
+                    "calibMenu",
+                    "result",
+                ].includes(state);
+                if (menu && deco.length < 14 && Math.random() < dt * 3) {
+                    const k =
+                        Math.random() < 0.1
+                            ? BOMB
+                            : FRUITS[(Math.random() * FRUITS.length) | 0];
+                    deco.push({
+                        e: k.e,
+                        x: Math.random() * W,
+                        y: H + 60,
+                        vy: -(30 + Math.random() * 50),
+                        rot: Math.random() * 6,
+                        vr: Math.random() - 0.5,
+                        s: 40 + Math.random() * 70,
+                        a: 0,
+                    });
+                }
+                for (const d of deco) {
+                    d.y += d.vy * dt;
+                    d.rot += d.vr * dt;
+                    d.a = menu
+                        ? Math.min(0.55, d.a + dt * 0.5)
+                        : Math.max(0, d.a - dt * 2);
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, d.a);
+                    ctx.translate(d.x, d.y);
+                    ctx.rotate(d.rot);
+                    ctx.drawImage(sprite(d.e), -d.s / 2, -d.s / 2, d.s, d.s);
+                    ctx.restore();
+                }
+                deco = deco.filter((d) => d.y > -100 && (menu || d.a > 0));
+            }
+
+            // 時間のリング
+            function drawTimer() {
+                const total = MODES[mode].time,
+                    s = Math.ceil(timeLeft),
+                    cx = W / 2,
+                    cy = 118,
+                    r = 30;
+                const low = s <= 10,
+                    col = low ? "#ff5c7a" : "#00e5ff";
+                ctx.save();
+                ctx.fillStyle = "rgba(8,10,30,.6)";
+                ctx.beginPath();
+                ctx.arc(cx, cy, r + 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 6;
+                ctx.lineCap = "round";
+                ctx.strokeStyle = "rgba(255,255,255,.12)";
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.strokeStyle = col;
+                ctx.shadowColor = col;
+                ctx.shadowBlur = 14;
+                ctx.beginPath();
+                ctx.arc(
+                    cx,
+                    cy,
+                    r,
+                    -Math.PI / 2,
+                    -Math.PI / 2 + Math.PI * 2 * Math.max(0, timeLeft / total),
+                );
+                ctx.stroke();
+                ctx.restore();
+                const pulse =
+                    low && state === "play"
+                        ? 1 + 0.12 * Math.abs(Math.sin(timeLeft * Math.PI))
+                        : 1;
+                text(
+                    String(s),
+                    cx,
+                    cy + 1,
+                    26 * pulse,
+                    low ? "#ff8fa3" : "#fff",
+                );
+            }
+
+            function draw(t) {
+                // 背景：カメラ映像（反転）を暗めに
+                if (video.readyState >= 2) {
+                    const r = videoRect();
+                    ctx.save();
+                    ctx.translate(W, 0);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(video, r.dx, r.dy, r.w, r.h);
+                    ctx.restore();
+                    ctx.fillStyle = "rgba(6,8,24,0.6)";
+                    ctx.fillRect(0, 0, W, H);
+                } else {
+                    const grd = ctx.createRadialGradient(
+                        W / 2,
+                        H * 0.35,
+                        50,
+                        W / 2,
+                        H / 2,
+                        Math.max(W, H),
+                    );
+                    grd.addColorStop(0, "#2a1d5e");
+                    grd.addColorStop(0.5, "#10143a");
+                    grd.addColorStop(1, "#05060f");
+                    ctx.fillStyle = grd;
+                    ctx.fillRect(0, 0, W, H);
+                }
+                // 画面のふちを暗くして、まんなかを引き立てる
+                const vg = ctx.createRadialGradient(
+                    W / 2,
+                    H / 2,
+                    Math.min(W, H) * 0.35,
+                    W / 2,
+                    H / 2,
+                    Math.max(W, H) * 0.75,
+                );
+                vg.addColorStop(0, "rgba(0,0,0,0)");
+                vg.addColorStop(1, "rgba(0,0,0,.55)");
+                ctx.fillStyle = vg;
+                ctx.fillRect(0, 0, W, H);
+
+                drawDeco(frameDt, t);
+                for (const p of players) drawPlayer(p, t);
+
+                if (players.length > 1) {
+                    // まんなかの区切りは光の刃
+                    ctx.save();
+                    const lg = ctx.createLinearGradient(0, 0, 0, H);
+                    lg.addColorStop(0, "rgba(77,171,247,0)");
+                    lg.addColorStop(0.5, "#ffffff");
+                    lg.addColorStop(1, "rgba(255,107,107,0)");
+                    ctx.strokeStyle = lg;
+                    ctx.lineWidth = 3;
+                    ctx.shadowColor = "#b197fc";
+                    ctx.shadowBlur = 18;
+                    ctx.beginPath();
+                    ctx.moveTo(W / 2, 0);
+                    ctx.lineTo(W / 2, H);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                if (
+                    MODES[mode].time &&
+                    ["countdown", "play", "paused", "ending"].includes(state)
+                )
+                    drawTimer();
+                if (state === "countdown") {
+                    const n = Math.ceil(countdown),
+                        f = countdown % 1,
+                        scale = 1 + f * 0.5;
+                    for (const p of players) {
+                        const cx = (p.x0 + p.x1) / 2;
+                        ctx.save();
+                        ctx.globalAlpha = f;
+                        ctx.strokeStyle = "#00e5ff";
+                        ctx.lineWidth = 4;
+                        ctx.shadowColor = "#00e5ff";
+                        ctx.shadowBlur = 20;
+                        ctx.beginPath();
+                        ctx.arc(cx, H / 2, 90 + (1 - f) * 120, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.restore();
+                        text(String(n), cx, H / 2, 150 * scale, "#fff");
+                    }
+                }
+                if (goTimer > 0) {
+                    const k = goTimer / 0.8;
+                    ctx.save();
+                    ctx.globalAlpha = Math.min(1, k * 2);
+                    for (const p of players)
+                        text(
+                            "GO!",
+                            (p.x0 + p.x1) / 2,
+                            H / 2,
+                            120 + (1 - k) * 80,
+                            "#ffd43b",
+                        );
+                    ctx.restore();
+                }
+                drawSkeletons();
+                if (state === "calib") drawCalib(t);
+                if (stats.on)
+                    text(
+                        stats.text || "計測中…",
+                        16,
+                        H - 20,
+                        16,
+                        "#8ce99a",
+                        "left",
+                    );
+            }
+
+            // 手の骨格（人さし指は強調。伸ばしていると水色、曲げていると灰色）
+            function drawSkeletons() {
+                if (!showSkeleton && state !== "calib") return;
+                const playing = [
+                    "play",
+                    "countdown",
+                    "ending",
+                    "ready",
+                ].includes(state);
+                ctx.save();
+                ctx.lineCap = "round";
+                for (const h of hands) {
+                    if (!h.S) continue;
+                    ctx.globalAlpha = playing ? 0.35 : 0.9;
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    for (const [a, b] of BONES) {
+                        if (a >= 5 && a <= 8 && b <= 8 && b >= 6) continue;
+                        ctx.moveTo(h.S[a].x, h.S[a].y);
+                        ctx.lineTo(h.S[b].x, h.S[b].y);
+                    }
+                    ctx.stroke();
+                    ctx.strokeStyle = h.pointing ? "#4dd4ff" : "#adb5bd";
+                    ctx.lineWidth = 6;
+                    ctx.beginPath();
+                    ctx.moveTo(h.S[5].x, h.S[5].y);
+                    for (const i of [6, 7, 8]) ctx.lineTo(h.S[i].x, h.S[i].y);
+                    ctx.stroke();
+                    ctx.fillStyle = "#fff";
+                    for (const p of h.S) {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                ctx.restore();
+            }
+
+            function drawPlayer(p, t) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(p.x0, 0, p.x1 - p.x0, H);
+                ctx.clip();
+                if (p.shake > 0)
+                    ctx.translate(
+                        (Math.random() - 0.5) * p.shake * 30,
+                        (Math.random() - 0.5) * p.shake * 30,
+                    );
+
+                // 果汁のしみ
+                for (const s of p.splats) {
+                    ctx.globalAlpha = Math.min(1, s.life) * 0.45;
+                    ctx.fillStyle = s.c;
+                    ctx.beginPath();
+                    for (let i = 0; i < 10; i++) {
+                        const a = s.rot + (i / 10) * Math.PI * 2,
+                            rr = s.r * (0.7 + 0.3 * Math.sin(i * 7.3 + s.rot));
+                        i
+                            ? ctx.lineTo(
+                                  s.x + Math.cos(a) * rr,
+                                  s.y + Math.sin(a) * rr,
+                              )
+                            : ctx.moveTo(
+                                  s.x + Math.cos(a) * rr,
+                                  s.y + Math.sin(a) * rr,
+                              );
+                    }
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                for (const f of p.fruits) {
+                    ctx.save();
+                    ctx.translate(f.x, f.y);
+                    ctx.rotate(f.rot);
+                    if (f.kind.bomb) {
+                        ctx.shadowColor = "#ff3b3b";
+                        ctx.shadowBlur = 20 + Math.sin(t * 20) * 10;
+                    }
+                    if (f.float) {
+                        ctx.shadowColor = "#fff";
+                        ctx.shadowBlur = 25 + Math.sin(t * 4) * 10;
+                    }
+                    const sz = f.r * 2.3;
+                    ctx.drawImage(sprite(f.kind.e), -sz / 2, -sz / 2, sz, sz);
+                    ctx.restore();
+                }
+
+                // 切れたかけら（切断線で半分にクリップ）
+                for (const q of p.pieces) {
+                    ctx.save();
+                    ctx.translate(q.x, q.y);
+                    ctx.rotate(q.rot);
+                    ctx.globalAlpha = Math.min(1, q.life * 2);
+                    ctx.rotate(q.cut);
+                    ctx.beginPath();
+                    ctx.rect(
+                        -q.r * 2,
+                        q.side < 0 ? -q.r * 2 : 0,
+                        q.r * 4,
+                        q.r * 2,
+                    );
+                    ctx.clip();
+                    ctx.rotate(-q.cut);
+                    const sz = q.r * 2.3;
+                    ctx.drawImage(sprite(q.kind.e), -sz / 2, -sz / 2, sz, sz);
+                    ctx.restore();
+                }
+
+                for (const d of p.drops) {
+                    ctx.globalAlpha = Math.min(1, d.life * 2);
+                    ctx.fillStyle = d.c;
+                    ctx.beginPath();
+                    ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                // 剣の軌跡
+                if (p.trail.length > 1) {
+                    ctx.lineCap = "round";
+                    ctx.lineJoin = "round";
+                    ctx.shadowColor = p.color;
+                    ctx.shadowBlur = 20;
+                    for (let i = 1; i < p.trail.length; i++) {
+                        const a = p.trail[i - 1],
+                            b = p.trail[i],
+                            k = i / p.trail.length;
+                        ctx.globalAlpha = k * 0.9;
+                        ctx.strokeStyle = p.color;
+                        ctx.lineWidth = 3 + k * 12;
+                        ctx.beginPath();
+                        ctx.moveTo(a.x, a.y);
+                        ctx.lineTo(b.x, b.y);
+                        ctx.stroke();
+                        ctx.globalAlpha = k;
+                        ctx.strokeStyle = "#fff";
+                        ctx.lineWidth = 1 + k * 4;
+                        ctx.beginPath();
+                        ctx.moveTo(a.x, a.y);
+                        ctx.lineTo(b.x, b.y);
+                        ctx.stroke();
+                    }
+                    ctx.shadowBlur = 0;
+                    ctx.globalAlpha = 1;
+                }
+
+                for (const x of p.texts) {
+                    ctx.globalAlpha = Math.min(1, x.life * 2);
+                    text(x.s, x.x, x.y, x.size, x.c);
+                }
+                ctx.globalAlpha = 1;
+
+                if (p.flash > 0) {
+                    ctx.fillStyle = `rgba(255,190,120,${p.flash * 0.6})`;
+                    ctx.fillRect(p.x0 - 50, -50, p.x1 - p.x0 + 100, H + 100);
+                }
+                ctx.restore();
+
+                // スコアなど（2Pは右寄せ）
+                const right = p.id === 1,
+                    hx = right ? p.x1 - 26 : p.x0 + 26,
+                    align = right ? "right" : "left";
+                const scoreCol = p.name ? p.color : "#ffd43b";
+                text(
+                    p.name ? `${p.name}  SCORE` : "SCORE",
+                    hx,
+                    28,
+                    15,
+                    p.name ? p.color : "#00e5ff",
+                    align,
+                );
+                text(String(p.score), hx, 70, 56, scoreCol, align);
+                if (!p.name)
+                    text(
+                        `BEST ${best[mode] ?? 0}`,
+                        hx,
+                        112,
+                        15,
+                        "rgba(255,255,255,.75)",
+                        align,
+                    );
+                if (mode === "classic") {
+                    ctx.font = `30px ${FONT}`;
+                    ctx.textAlign = "right";
+                    ctx.textBaseline = "middle";
+                    for (let i = 0; i < 3; i++) {
+                        ctx.globalAlpha = i < p.lives ? 1 : 0.25;
+                        ctx.fillText(
+                            i < p.lives ? "❤️" : "🖤",
+                            p.x1 - 26 - (2 - i) * 40,
+                            50,
+                        );
+                    }
+                    ctx.globalAlpha = 1;
+                }
+                if (
+                    !p.handSeen &&
+                    ["ready", "countdown", "play"].includes(state)
+                ) {
+                    text(
+                        "✋ 手をカメラに映してください",
+                        (p.x0 + p.x1) / 2,
+                        H - 60,
+                        22,
+                        "#fff",
+                    );
+                }
+            }
+
+            if (DEBUG)
+                window.__tick = (now) => {
+                    last = now - 16;
+                    frame(now);
+                }; // 画面が描画されない環境でも1コマ進める
+            if (DEBUG)
+                window.__cal = () =>
+                    cal && {
+                        step: cal.step,
+                        si: cal.si,
+                        corners: cal.corners.length,
+                        peaks: cal.peaks.length,
+                        hold: cal.hold,
+                    };
+            if (DEBUG)
+                window.__game = () => ({
+                    state,
+                    mode,
+                    timeLeft,
+                    goTimer,
+                    players: players.map((p) => ({
+                        score: p.score,
+                        ready: p.ready,
+                        fruits: p.fruits.length,
+                    })),
+                });
+
+            // ---------- 起動 ----------
+            if (IS_APP)
+                document
+                    .querySelectorAll(".app-only")
+                    .forEach((b) => b.classList.remove("hidden"));
+            updateSoundLabels();
+            resize();
+            initCamera();
+            requestAnimationFrame(frame);
+        </script>
+    </body>
+</html>
